@@ -44,14 +44,25 @@ module.exports = (mongoose) => {
         return model.find(obj);
     }
 
-    const auth = (password, callback) => {
+    const authClient = (password, callback) => {
+        const clientID = encrypt(Date.now() + Math.random())
         model.findOne({
-            password: encrypt(password)
-        }, (err, res) => {
-            if(err)
-                return callback("Password is not correct", res);
-            
-            // continue to write
+            password
+        }).then(resp => {
+            const { clients, _id, token } = resp.clients;
+            clients.push(clientID);
+
+            model.findByIdAndUpdate(resp._id, {
+                clients
+            }).then(resp => {
+                callback(null, {
+                    id: _id,
+                    token,
+                    clientID
+                })
+            })
+        }).catch(err => {
+            callback(err, null)
         })
     }
 
@@ -60,7 +71,7 @@ module.exports = (mongoose) => {
     }
 
     return {
-        auth,
+        authClient,
         save,
         findRooms
     }
