@@ -20,6 +20,7 @@ module.exports = (mongoose) => {
         password: {
             type: String,
             required: true,
+            unique: true
             /*set: (v) => {
                 return encrypt(v)
             }*/
