@@ -17,6 +17,10 @@ class ApiRoute extends API {
         this.app.post('/api/dj/rooms/create', (req, res) => this.createRoom(req, res))
     }
 
+    createClientRoutes () {
+        this.app.post('/api/client/auth', (req, res) => this.authClient(req, res))
+    }
+
     createRoom (req, res) {
         const { password, name, dj } = req.body;
 
@@ -106,6 +110,17 @@ class ApiRoute extends API {
             res.json(this.successResponse(resp))
         });
     }
+
+    authClient (req, res) {
+        const { password } = req.body;
+        Rooms.authClient(password, (err, resp) => {
+            if(err)
+                return res.json(this.errorResponse(err))
+            
+            res.json(this.successResponse(resp))
+        });
+    }
+
 }
 
 module.exports = ApiRoute
