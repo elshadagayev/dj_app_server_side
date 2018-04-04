@@ -48,7 +48,24 @@ class ApiRoute extends API {
     }
 
     getRooms (req, res) {
-        res.json(this.successResonse([]))
+        let { token } = req.query;
+        token = token ? token.replace(' ', '+') : "";
+        if(!token)
+            return res.json(this.successResponse([]));
+
+        DJ.findOne({
+            token
+        }).then(resp => {
+            Rooms.findRooms({
+                dj: resp._id
+            }).then(resp => {
+                res.json(this.successResponse(resp));
+            }).catch(err => {
+                res.json(this.errorResponse(err));
+            });
+        }).catch(err => {
+            res.json(this.errorResponse(err))
+        })
     }
 
     registerDJ (req, res) {

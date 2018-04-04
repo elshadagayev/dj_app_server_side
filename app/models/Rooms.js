@@ -20,9 +20,9 @@ module.exports = (mongoose) => {
         password: {
             type: String,
             required: true,
-            set: (v) => {
+            /*set: (v) => {
                 return encrypt(v)
-            }
+            }*/
         },
         dj: {
             type: mongoose.Schema.Types.ObjectId,
@@ -38,6 +38,10 @@ module.exports = (mongoose) => {
     })
 
     const model = mongoose.model('rooms', DJ);
+
+    const findRooms = (obj) => {
+        return model.find(obj);
+    }
 
     const auth = (password, callback) => {
         model.findOne({
@@ -56,6 +60,7 @@ module.exports = (mongoose) => {
 
     return {
         auth,
-        save
+        save,
+        findRooms
     }
 }

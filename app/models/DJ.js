@@ -64,6 +64,6 @@ module.exports = (mongoose) => {
     return {
         auth,
         save,
-        findOne
+        findOne,
     }
 }
