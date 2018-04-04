@@ -29,6 +29,7 @@ module.exports = (mongoose) => {
             ref: 'djs',
         },
         clients: Array,
+        songs: Array,
         token: {
             type: String, 
             default: () => {

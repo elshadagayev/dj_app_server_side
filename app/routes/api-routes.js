@@ -50,6 +50,7 @@ class ApiRoute extends API {
     getRooms (req, res) {
         let { token } = req.query;
         token = token ? token.replace(' ', '+') : "";
+        console.log("BBB", token, req.query);
         if(!token)
             return res.json(this.successResponse([]));
 
