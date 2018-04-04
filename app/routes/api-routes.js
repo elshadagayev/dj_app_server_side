@@ -15,6 +15,7 @@ class ApiRoute extends API {
         this.app.post('/api/dj/register', (req, res) => this.registerDJ(req, res))
         this.app.post('/api/dj/auth', (req, res) => this.authDJ(req, res))
         this.app.post('/api/dj/rooms/create', (req, res) => this.createRoom(req, res))
+        this.app.get('/api/dj/room', (req, res) => this.getRoom(req, res));
     }
 
     createClientRoutes () {
@@ -51,10 +52,29 @@ class ApiRoute extends API {
         })
     }
 
+    getRoom (req, res) {
+        let { room_id, token } = req.query;
+        token = token ? token.replace(' ', '+') : "";
+        
+        if(!token)
+            return res.json(this.successResponse([]));
+        
+        DJ.findOne({
+            token
+        }).then(resp => {
+            Rooms.findRoom(room_id).then(resp => {
+                res.json(this.successResponse(resp));
+            }).catch(err => {
+                res.json(this.errorResponse(err));
+            });
+        }).catch(err => {
+            res.json(this.errorResponse(err))
+        })
+    }
+
     getRooms (req, res) {
         let { token } = req.query;
         token = token ? token.replace(' ', '+') : "";
-        console.log("BBB", token, req.query);
         if(!token)
             return res.json(this.successResponse([]));
 

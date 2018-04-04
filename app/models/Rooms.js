@@ -44,6 +44,10 @@ module.exports = (mongoose) => {
         return model.find(obj);
     }
 
+    const findRoom = (roomId) => {
+        return model.findById(roomId);
+    }
+
     const authClient = (password, callback) => {
         const clientID = encrypt(Date.now() + Math.random())
         model.findOne({
@@ -73,6 +77,7 @@ module.exports = (mongoose) => {
     return {
         authClient,
         save,
-        findRooms
+        findRooms,
+        findRoom
     }
 }
