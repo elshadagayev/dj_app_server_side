@@ -49,21 +49,27 @@ module.exports = (mongoose) => {
         return model.findById(roomId);
     }
 
-    const authClient = (password, callback) => {
-        const clientID = encrypt(Date.now() + Math.random())
+    const authClient = (password, full_name, callback) => {
+        const clientID = encrypt(Date.now() + Math.random() + full_name)
         model.findOne({
             password
         }).then(resp => {
-            const { clients, _id, token } = resp.clients;
-            clients.push(clientID);
+            let { clients, _id, token } = resp;
+            clients = clients instanceof Array ? clients : []
+            clients.push({
+                clientID,
+                full_name,
+                spotify_token: ""
+            });
 
             model.findByIdAndUpdate(resp._id, {
                 clients
             }).then(resp => {
                 callback(null, {
-                    id: _id,
-                    token,
-                    clientID
+                    id: resp._id,
+                    token: resp.token,
+                    clientID: clientID,
+                    dj: resp.dj
                 })
             })
         }).catch(err => {

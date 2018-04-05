@@ -35,22 +35,8 @@ module.exports = (mongoose) => {
 
     const model = mongoose.model('dj', DJ);
 
-    const auth = (email, pass, callback) => {
-        model.findOne({
-            email
-        }, (err, res) => {
-            if(err)
-                return callback("Email or password is not correct", res);
-            
-            const { email, password, token } = res;
-
-            if(password !== encrypt(pass))
-                return callback("Email or password is not correct")
-
-            callback(null, {
-                email, token
-            })
-        })
+    const auth = (obj) => {
+        return model.findOne(obj)
     }
 
     const save = (obj) => {

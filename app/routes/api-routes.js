@@ -8,6 +8,7 @@ class ApiRoute extends API {
         this.app = app;
 
         this.createDJRoutes()
+        this.createClientRoutes()
     }
 
     createDJRoutes () {
@@ -20,6 +21,13 @@ class ApiRoute extends API {
 
     createClientRoutes () {
         this.app.post('/api/client/auth', (req, res) => this.authClient(req, res))
+        this.app.get('/api/client/songs', (req, res) => this.getClientSongs(req, res))
+    }
+
+    getClientSongs (req, res) {
+        const { token, clientID } = req.query;
+
+        res.json(this.successResponse(req.query))
     }
 
     createRoom (req, res) {
@@ -124,17 +132,18 @@ class ApiRoute extends API {
 
     authDJ (req, res) {
         const { email, password } = req.body;
-        DJ.auth(email, password, (err, resp) => {
-            if(err)
-                return res.json(this.errorResponse(err))
-            
+        DJ.auth({
+            email, password
+        }).then(resp => {
             res.json(this.successResponse(resp))
+        }).catch(err => {
+            res.json(this.errorResponse("Email or password is not correct"))
         });
     }
 
     authClient (req, res) {
-        const { password } = req.body;
-        Rooms.authClient(password, (err, resp) => {
+        const { password, full_name } = req.body;
+        Rooms.authClient(password, full_name, (err, resp) => {
             if(err)
                 return res.json(this.errorResponse(err))
             
