@@ -22,7 +22,37 @@ class ApiRoute extends API {
     createClientRoutes () {
         this.app.post('/api/client/auth', (req, res) => this.authClient(req, res))
         this.app.get('/api/client/songs', (req, res) => this.getClientSongs(req, res))
+        this.app.get('/api/client/songs/all', (req, res) => this.getAllSongs(req, res))
         this.app.post('/api/client/songs/add', (req, res) => this.addClientSong(req, res))
+        this.app.post('/api/client/songs/remove', (req, res) => this.removeClientSong(req, res))
+        this.app.post('/api/client/songs/like', (req, res) => this.likeSong(req, res))
+        this.app.post('/api/client/songs/dislike', (req, res) => this.dislikeSong(req, res))
+    }
+
+    likeSong(req, res) {
+        try {
+            const { songID, token, clientID } = req.body;
+            Rooms.likeSong(token, clientID, songID, (err, resp) => {
+                if(err)
+                    return res.json(this.errorResponse("Could not like song"))
+                res.json(this.successResponse("OK"));
+            });
+        } catch (E) {
+            res.json(this.errorResponse(E))
+        }
+    }
+
+    dislikeSong(req, res) {
+        try {
+            const { songID, token, clientID } = req.body;
+            Rooms.dislikeSong(token, clientID, songID, (err, resp) => {
+                if(err)
+                    return res.json(this.errorResponse("Could not dislike song"))
+                res.json(this.successResponse("OK"));
+            });
+        } catch (E) {
+            res.json(this.errorResponse(E))
+        }
     }
 
     addClientSong(req, res) {
@@ -38,13 +68,40 @@ class ApiRoute extends API {
         }
     }
 
+    removeClientSong(req, res) {
+        try {
+            const { songID, token, clientID } = req.body;
+            Rooms.removeSong(token, clientID, songID, (err, resp) => {
+                if(err)
+                    return res.json(this.errorResponse("Could not remove song"))
+                res.json(this.successResponse(resp));
+            });
+        } catch(E) {
+            res.json(this.errorResponse(E))
+        }
+    }
+
     getClientSongs (req, res) {
         try {
             const { token, clientID } = req.query;
 
             Rooms.getClientSongs(token, clientID, (err, resp) => {
                 if(err)
-                    return res.json(this.errorResponse("Could not get songs" + err))
+                    return res.json(this.errorResponse("Could not get songs"))
+                res.json(this.successResponse(resp));
+            })
+        } catch (E) {
+            res.json(this.errorResponse(E))
+        }
+    }
+
+    getAllSongs (req, res) {
+        try {
+            const { token, clientID } = req.query;
+
+            Rooms.getAllSongs(token, clientID, (err, resp) => {
+                if(err)
+                    return res.json(this.errorResponse("Could not get songs"))
                 res.json(this.successResponse(resp));
             })
         } catch (E) {
