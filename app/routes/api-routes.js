@@ -16,13 +16,14 @@ class ApiRoute extends API {
         this.app.post('/api/dj/register', (req, res) => this.registerDJ(req, res))
         this.app.post('/api/dj/auth', (req, res) => this.authDJ(req, res))
         this.app.post('/api/dj/rooms/create', (req, res) => this.createRoom(req, res))
-        this.app.get('/api/dj/room', (req, res) => this.getRoom(req, res));
+        this.app.post('/api/dj/rooms/remove', (req, res) => this.removeRoom(req, res))
+        this.app.get('/api/dj/room', (req, res) => this.getRoom(req, res))
     }
 
     createClientRoutes () {
         this.app.post('/api/client/auth', (req, res) => this.authClient(req, res))
-        this.app.get('/api/client/songs', (req, res) => this.getClientSongs(req, res))
-        this.app.get('/api/client/songs/all', (req, res) => this.getAllSongs(req, res))
+        //this.app.get('/api/client/songs', (req, res) => this.getClientSongs(req, res))
+        //this.app.get('/api/client/songs/all', (req, res) => this.getAllSongs(req, res))
         this.app.post('/api/client/songs/add', (req, res) => this.addClientSong(req, res))
         this.app.post('/api/client/songs/remove', (req, res) => this.removeClientSong(req, res))
         this.app.post('/api/client/songs/like', (req, res) => this.likeSong(req, res))
@@ -136,6 +137,22 @@ class ApiRoute extends API {
                         }))
                 })
             }).catch(err => {
+                res.json(this.errorResponse(err))
+            })
+        } catch(E) {
+            res.json(this.errorResponse(E));
+        }
+    }
+
+    removeRoom (req, res) {
+        try {
+            const { id } = req.body;
+
+            Rooms.remove(id)
+            .then((resp) => {
+                res.json(this.successResponse("OK"))
+            })
+            .catch(err => {
                 res.json(this.errorResponse(err))
             })
         } catch(E) {

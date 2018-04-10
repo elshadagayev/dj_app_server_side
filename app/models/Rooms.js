@@ -1,11 +1,16 @@
 const crypto = require("crypto")
+const EventEmitter = require("events")
+const DJ = require("./DJ")
+
+const roomsEvent = new EventEmitter();
+roomsEvent.setMaxListeners(0);
 
 module.exports = (mongoose) => {
     const encrypt = (data) => {
         return crypto.createHash('sha256').update(data).digest('base64')
     }
     
-    const DJ = mongoose.Schema({
+    const Rooms = mongoose.Schema({
         name: {
             type: String,
             required: true,
@@ -39,7 +44,71 @@ module.exports = (mongoose) => {
         }
     })
 
-    const model = mongoose.model('rooms', DJ);
+    const model = mongoose.model('rooms', Rooms);
+
+    const getGeneralInfo = (roomToken, clientID, callback) => {
+        model.findOne({
+            token: roomToken,
+        })
+        .then(room => {
+            const info = {
+                name: room.name,
+                password: room.password,
+                clients: room.clients.length,
+                songs: room.songs.length,
+            }
+
+            const client = room.clients.find(el => {
+                return el.clientID === clientID
+            })
+
+            info.client = client ? client.full_name : null
+
+            callback(null, info);
+        })
+        .catch(err => {
+            callback(err, null)
+        })
+    }
+
+    const getDJGeneralInfo = (djID, roomID, callback) => {
+        model.findOne({
+            _id: roomID,
+            dj: djID
+        }).then(room => {
+            const clients = room.clients.map(client => {
+                const songs = room.songs.filter(song => {
+                    return song.clientID === client.clientID
+                })
+
+                client.songs = songs ? songs.length : 0
+
+                return client
+            })
+
+            const songs = room.songs
+
+            songs.sort((a, b) => {
+                const rateA = a.likes - a.dislikes;
+                const rateB = b.likes - b.dislikes;
+                return rateB - rateA
+            })
+
+            const info = {
+                name: room.name,
+                password: room.password,
+                clients_len: room.clients.length,
+                songs_len: room.songs.length,
+                clients,
+                songs
+            }
+
+            callback(null, info);
+        })
+        .catch(err => {
+            callback(err, null)
+        })
+    }
 
     const findRooms = (obj) => {
         return model.find(obj);
@@ -54,6 +123,8 @@ module.exports = (mongoose) => {
         model.findOne({
             password
         }).then(resp => {
+            if(!resp)
+                return callback("Rooms was not found", null)
             let { clients, _id, token } = resp;
             clients = clients instanceof Array ? clients : []
             clients.push({
@@ -66,14 +137,40 @@ module.exports = (mongoose) => {
                 clients
             }).then(resp => {
                 callback(null, {
-                    id: resp._id,
                     token: resp.token,
                     clientID: clientID,
                     dj: resp.dj
                 })
+                roomsEvent.emit('get_room_general_info')
+                roomsEvent.emit('get_dj_room_general_info')
+                roomsEvent.emit('get_dj_rooms')
             })
         }).catch(err => {
             callback(err, null)
+        })
+    }
+
+    const getClientSongs = (roomToken, clientID, callback) => {
+        model.findOne({
+            token: roomToken
+        }).then(res => {
+            if(!res)
+                return callback("Could not find songs", null)
+            let songs = res.songs;
+            songs = songs.filter(el => {
+                return el.clientID === clientID
+            }).map(el => {
+                const client = res.clients.find(client => {
+                    return client.clientID === clientID
+                })
+
+                el.clientName = client.full_name
+                return el;
+            });
+
+            callback(null, songs);
+        }).catch(err => {
+            callback(err, null);
         })
     }
 
@@ -108,33 +205,13 @@ module.exports = (mongoose) => {
                 songs
             }).then(res => {
                 callback(null, res);
+                roomsEvent.emit('updated_songs');
+                roomsEvent.emit('get_room_general_info');
+                roomsEvent.emit('get_dj_room_general_info');
+                roomsEvent.emit('get_dj_rooms');
             }).catch(err => {
                 callback(err, null);
             })
-        })
-    }
-
-    const getClientSongs = (roomToken, clientID, callback) => {
-        model.findOne({
-            token: roomToken
-        }).then(res => {
-            if(!res)
-                return callback("Could not find songs", null)
-            let songs = res.songs;
-            songs = songs.filter(el => {
-                return el.clientID === clientID
-            }).map(el => {
-                const client = res.clients.find(client => {
-                    return client.clientID === clientID
-                })
-
-                el.clientName = client.full_name
-                return el;
-            });
-
-            callback(null, songs);
-        }).catch(err => {
-            callback(err, null);
         })
     }
 
@@ -174,6 +251,8 @@ module.exports = (mongoose) => {
         model.findOne({
             token: roomToken
         }).then(res => {
+            if(!res)
+                return callback("Room was not found", null)
             let songs = res.songs instanceof Array ? res.songs : [];
             songs = songs.filter(el => {
                 return !(el.songID === songID && el.clientID === clientID && !el.likes && !el.dislikes)
@@ -183,6 +262,10 @@ module.exports = (mongoose) => {
                 songs
             }).then(res => {
                 callback(null, "OK")
+                roomsEvent.emit('updated_songs');
+                roomsEvent.emit('get_room_general_info');
+                roomsEvent.emit('get_dj_room_general_info')
+                roomsEvent.emit('get_dj_rooms');
             }).catch(err => {
                 callback(err, null);
             })
@@ -208,6 +291,9 @@ module.exports = (mongoose) => {
                 songs
             }).then(res => {
                 callback(null, "OK")
+                roomsEvent.emit('updated_songs');
+                roomsEvent.emit('get_dj_rooms');
+                roomsEvent.emit('get_dj_room_general_info')
             }).catch(err => {
                 callback(err, null);
             })
@@ -233,6 +319,9 @@ module.exports = (mongoose) => {
                 songs
             }).then(res => {
                 callback(null, "OK")
+                roomsEvent.emit('updated_songs');
+                roomsEvent.emit('get_dj_rooms');
+                roomsEvent.emit('get_dj_room_general_info')
             }).catch(err => {
                 callback(err, null);
             })
@@ -240,19 +329,33 @@ module.exports = (mongoose) => {
     }
 
     const save = (obj) => {
+        roomsEvent.emit('get_dj_rooms')
+        roomsEvent.emit('get_dj_room_general_info')
         return new model(obj);
+    }
+
+    const remove = (roomID) => {
+        roomsEvent.emit('get_dj_rooms')
+        roomsEvent.emit('room_deleted')
+        roomsEvent.emit('get_dj_room_general_info')
+        return model.findByIdAndRemove(roomID)
     }
 
     return {
         authClient,
         save,
+        remove,
         findRooms,
         findRoom,
         addSong,
         removeSong,
         getClientSongs,
         getAllSongs,
+        getGeneralInfo,
+        getDJGeneralInfo,
         likeSong,
         dislikeSong,
+        schema: Rooms,
+        events: roomsEvent,
     }
 }

@@ -1,4 +1,8 @@
 const crypto = require("crypto")
+const EventEmitter = require("events")
+
+const djEvent = new EventEmitter();
+djEvent.setMaxListeners(0);
 
 module.exports = (mongoose) => {
     const encrypt = (data) => {
@@ -43,13 +47,19 @@ module.exports = (mongoose) => {
         return new model(obj);
     }
 
-    const findOne = (obj, callback) => {
+    const findOne = (obj) => {
         return model.findOne(obj)
+    }
+
+    const findById = (id) => {
+        return model.findById(id)
     }
 
     return {
         auth,
         save,
         findOne,
+        findById,
+        events: djEvent
     }
 }
