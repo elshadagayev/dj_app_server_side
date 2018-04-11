@@ -17,6 +17,7 @@ class ApiRoute extends API {
         this.app.post('/api/dj/auth', (req, res) => this.authDJ(req, res))
         this.app.post('/api/dj/rooms/create', (req, res) => this.createRoom(req, res))
         this.app.post('/api/dj/rooms/remove', (req, res) => this.removeRoom(req, res))
+        this.app.post('/api/dj/room/stop_voting', (req, res) => this.stopVoting(req, res))
         this.app.get('/api/dj/room', (req, res) => this.getRoom(req, res))
     }
 
@@ -28,6 +29,23 @@ class ApiRoute extends API {
         this.app.post('/api/client/songs/remove', (req, res) => this.removeClientSong(req, res))
         this.app.post('/api/client/songs/like', (req, res) => this.likeSong(req, res))
         this.app.post('/api/client/songs/dislike', (req, res) => this.dislikeSong(req, res))
+    }
+
+    stopVoting(req, res) {
+        try {
+            const { token, room_id, voting } = req.body;
+            DJ.findOne({
+                token
+            }).then(dj => {
+                Rooms.stopVoting(dj._id, room_id, voting, (err, resp) => {
+                    if(err)
+                        return res.json(this.errorResponse(err))
+                    res.json(this.successResponse(resp));
+                })
+            }).catch(err => res.json(this.errorResponse(err)))
+        } catch (E) {
+            
+        }
     }
 
     likeSong(req, res) {

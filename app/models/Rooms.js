@@ -41,6 +41,10 @@ module.exports = (mongoose) => {
             default: () => {
                 return encrypt(Date.now().toString() + this.password)
             }
+        },
+        voting_stopped: {
+            type: Boolean,
+            default: false
         }
     })
 
@@ -56,6 +60,7 @@ module.exports = (mongoose) => {
                 password: room.password,
                 clients: room.clients.length,
                 songs: room.songs.length,
+                voting_stopped: room.voting_stopped
             }
 
             const client = room.clients.find(el => {
@@ -99,6 +104,7 @@ module.exports = (mongoose) => {
                 password: room.password,
                 clients_len: room.clients.length,
                 songs_len: room.songs.length,
+                voting_stopped: !!room.voting_stopped,
                 clients,
                 songs
             }
@@ -147,6 +153,24 @@ module.exports = (mongoose) => {
             })
         }).catch(err => {
             callback(err, null)
+        })
+    }
+
+    const stopVoting = (djID, roomID, voting_stopped, callback) => {
+        model.findOne({
+            dj: djID,
+            _id: roomID
+        }).then(room => {
+            if(!room)
+                return callback("Room was not found", null)
+            model.findByIdAndUpdate(roomID, {
+                voting_stopped
+            }).then(resp => {
+                callback(null, resp)
+                roomsEvent.emit('get_room_general_info')
+                roomsEvent.emit('get_dj_room_general_info')
+                roomsEvent.emit('get_dj_rooms')
+            }).catch(err => callback(err, null));
         })
     }
 
@@ -278,8 +302,12 @@ module.exports = (mongoose) => {
         songID = songID.replace(' ', '+');
 
         model.findOne({
-            token: roomToken
+            token: roomToken,
+            voting_stopped: false
         }).then(res => {
+            if(!res)
+                return callback("Room was not found", null);
+
             let songs = res.songs instanceof Array ? res.songs : [];
             songs = songs.map(el => {
                 if(el.songID === songID && el.clientID !== clientID)
@@ -306,7 +334,8 @@ module.exports = (mongoose) => {
         songID = songID.replace(' ', '+');
 
         model.findOne({
-            token: roomToken
+            token: roomToken,
+            voting_stopped: false
         }).then(res => {
             let songs = res.songs instanceof Array ? res.songs : [];
             songs = songs.map(el => {
@@ -353,6 +382,7 @@ module.exports = (mongoose) => {
         getAllSongs,
         getGeneralInfo,
         getDJGeneralInfo,
+        stopVoting,
         likeSong,
         dislikeSong,
         schema: Rooms,
