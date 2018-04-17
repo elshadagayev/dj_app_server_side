@@ -3,9 +3,11 @@ const socketIO = require("socket.io")
 const http = require("http")
 require("dotenv").config()
 const ApiRoutes = require("./app/routes/api-routes")
+const HtmlRoutes = require("./app/routes/html-routes")
 const SocketRoutes = require('./app/routes/socket-routes')
 const cors = require("cors")
 const bodyParser = require("body-parser")
+const path = require("path")
 
 process.setMaxListeners(0);
 
@@ -16,8 +18,10 @@ app.use(cors())
 app.use(bodyParser.json({
     extended: true
 }))
+app.use(express.static(path.join(__dirname, '/client/static')))
 
 new ApiRoutes(app)
+new HtmlRoutes(app)
 new SocketRoutes(io)
 
 server.listen(process.env.SERVER_PORT, () => {
