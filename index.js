@@ -28,6 +28,6 @@ new ApiRoutes(app)
 new HtmlRoutes(app)
 new SocketRoutes(io)
 
-server.listen(process.env.SERVER_PORT, () => {
-    console.log("Listening port", process.env.SERVER_PORT)
+server.listen(process.env.PORT || 5000, () => {
+    console.log("Listening port", process.env.PORT || 5000)
 })
