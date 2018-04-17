@@ -13,7 +13,11 @@ process.setMaxListeners(0);
 
 const app = express()
 const server = http.createServer(app)
-const io = socketIO(server, {'pingInterval': 5000, 'pingTimeout': 5000})
+const io = socketIO(server, 
+{
+    'pingInterval': 5000, 
+    'pingTimeout': 5000,
+})
 app.use(cors())
 app.use(bodyParser.json({
     extended: true
